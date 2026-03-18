@@ -1,1 +1,4 @@
 project_id = "lrkuvxnauoerctbcbcsm"
+
+[functions.match-jobs]
+verify_jwt = false
