@@ -6,7 +6,6 @@
 
 @layer base {
   :root {
-    /* Clerk-inspired off-white base */
     --background: 40 20% 97%;
     --foreground: 0 0% 6%;
     --card: 0 0% 100%;
@@ -14,12 +13,10 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 6%;
 
-    /* Navy primary (from your existing brand) */
-    --primary: 221 83% 22%;
+    /* Emerald green as primary accent everywhere */
+    --primary: 152 72% 36%;
     --primary-foreground: 0 0% 100%;
-
-    /* Finexy-green accent */
-    --accent: 152 72% 38%;
+    --accent: 152 72% 36%;
     --accent-foreground: 0 0% 100%;
 
     --secondary: 40 15% 93%;
@@ -30,47 +27,48 @@
     --destructive-foreground: 0 0% 100%;
     --border: 40 10% 88%;
     --input: 40 10% 88%;
-    --ring: 152 72% 38%;
+    --ring: 152 72% 36%;
     --radius: 0.875rem;
 
-    /* Sidebar — icon-only slim dark */
+    /* Sidebar */
     --sidebar-bg: #0a0a0a;
     --sidebar-icon: rgba(255,255,255,0.45);
     --sidebar-icon-active: #ffffff;
-    --sidebar-active-bg: rgba(255,255,255,0.10);
+    --sidebar-active-bg: rgba(34,197,94,0.12);
     --sidebar-hover-bg: rgba(255,255,255,0.06);
     --sidebar-border: rgba(255,255,255,0.07);
-    --sidebar-width: 64px;
 
-    /* Accent green (Finexy) */
-    --green-500: #22c55e;
-    --green-600: #16a34a;
-    --green-50: #f0fdf4;
+    /* Emerald tokens used globally */
+    --green: #22c55e;
+    --green-dark: #16a34a;
+    --green-light: #f0fdf4;
+    --green-border: #bbf7d0;
 
-    /* Card elevation system */
+    /* Shadows */
     --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
     --shadow-lg: 0 10px 28px rgba(0,0,0,0.09), 0 4px 8px rgba(0,0,0,0.04);
-    --shadow-xl: 0 20px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.05);
 
-    /* Dotted grid (Clerk) */
-    --grid-dot: rgba(0,0,0,0.08);
+    /* Grid dot */
+    --grid-dot: rgba(0,0,0,0.07);
 
     /* Typography */
-    --font-display: 'Instrument Serif', Georgia, serif;
     --font-body: 'Geist', system-ui, sans-serif;
+    --font-display: 'Instrument Serif', Georgia, serif;
 
+    /* Legacy compat */
     --hero-gradient: linear-gradient(135deg, #060d1f 0%, #0f2040 50%, #152a52 100%);
     --card-shadow: var(--shadow-sm);
     --card-shadow-hover: var(--shadow-md);
+    --accent-500: #22c55e;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-border-var: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 152 72% 36%;
   }
 
   .dark {
@@ -80,7 +78,7 @@
     --card-foreground: 0 0% 95%;
     --popover: 0 0% 8%;
     --popover-foreground: 0 0% 95%;
-    --primary: 217 91% 60%;
+    --primary: 152 60% 45%;
     --primary-foreground: 0 0% 5%;
     --accent: 152 60% 45%;
     --accent-foreground: 0 0% 5%;
@@ -90,53 +88,65 @@
     --muted-foreground: 0 0% 50%;
     --border: 0 0% 14%;
     --input: 0 0% 14%;
-    --grid-dot: rgba(255,255,255,0.05);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-border-var: 240 3.7% 15.9%;
+    --grid-dot: rgba(255,255,255,0.04);
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 152 60% 45%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-border-var: 0 0% 12%;
   }
 }
 
 @layer base {
-  * { @apply border-border; }
+  * { @apply border-border; box-sizing: border-box; }
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
     font-size: 14px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  h1,h2,h3 { font-family: var(--font-body); }
 }
 
-/* ── Dotted grid background (Clerk aesthetic) ── */
+/* ── Dotted grid (Clerk style) ── */
 .dot-grid {
   background-image: radial-gradient(circle, var(--grid-dot) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-size: 22px 22px;
 }
 
 /* ── Premium card ── */
 .card-premium {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
+  border-radius: 14px;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 .card-premium:hover {
   box-shadow: var(--shadow-md);
-  border-color: hsl(var(--border) / 0.8);
 }
+.card-shadow { box-shadow: var(--card-shadow); }
+.card-shadow-hover { box-shadow: var(--card-shadow-hover); }
 
-/* ── Stat card accent bar ── */
+/* ── Consistent green accent used everywhere ── */
+.accent { color: #22c55e; }
+.bg-accent-soft { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.text-accent { color: #22c55e !important; }
+
+/* Override shadcn accent to emerald */
+.bg-accent { background-color: #22c55e !important; }
+.text-accent-foreground { color: #fff !important; }
+.border-accent { border-color: #22c55e !important; }
+.ring-accent { --tw-ring-color: #22c55e !important; }
+
+/* ── Stat card colored left border ── */
 .stat-accent-green { border-left: 3px solid #22c55e; }
 .stat-accent-blue  { border-left: 3px solid #3b82f6; }
 .stat-accent-amber { border-left: 3px solid #f59e0b; }
 .stat-accent-red   { border-left: 3px solid #ef4444; }
 
-/* ── Green pill badge ── */
+/* ── Badge ── */
 .badge-green {
   background: #f0fdf4;
   color: #15803d;
@@ -149,71 +159,24 @@
   align-items: center;
   gap: 4px;
 }
-.badge-green-dark {
-  background: #22c55e;
-  color: #fff;
-}
-
-/* ── Sidebar icon-only ── */
-.sidebar-icon-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--sidebar-icon);
-  transition: background 0.15s, color 0.15s;
-  cursor: pointer;
-  position: relative;
-}
-.sidebar-icon-btn:hover {
-  background: var(--sidebar-hover-bg);
-  color: var(--sidebar-icon-active);
-}
-.sidebar-icon-btn.active {
-  background: var(--sidebar-active-bg);
-  color: var(--sidebar-icon-active);
-}
-.sidebar-icon-btn .tooltip {
-  position: absolute;
-  left: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%);
-  background: #1a1a1a;
-  color: white;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 5px 10px;
-  border-radius: 6px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s;
-  z-index: 100;
-}
-.sidebar-icon-btn:hover .tooltip { opacity: 1; }
-
-/* ── Bento grid ── */
-.bento-grid {
-  display: grid;
-  gap: 16px;
-}
-.bento-2 { grid-template-columns: repeat(2, 1fr); }
-.bento-3 { grid-template-columns: repeat(3, 1fr); }
-.bento-4 { grid-template-columns: repeat(4, 1fr); }
 
 /* ── Animations ── */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.fade-up { animation: fade-up 0.35s ease-out both; }
-.fade-up-1 { animation-delay: 0.05s; }
-.fade-up-2 { animation-delay: 0.10s; }
-.fade-up-3 { animation-delay: 0.15s; }
-.fade-up-4 { animation-delay: 0.20s; }
-.fade-up-5 { animation-delay: 0.25s; }
+.fade-up   { animation: fade-up 0.3s ease-out both; }
+.fade-up-1 { animation-delay: 0.04s; }
+.fade-up-2 { animation-delay: 0.08s; }
+.fade-up-3 { animation-delay: 0.12s; }
+.fade-up-4 { animation-delay: 0.16s; }
+.fade-up-5 { animation-delay: 0.20s; }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fade-in-up 0.35s ease-out forwards; }
 
 @keyframes pulse-slow {
   0%,100% { opacity: 1; }
@@ -221,27 +184,7 @@
 }
 .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
 
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in-up { animation: fade-in-up 0.4s ease-out forwards; }
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
-
-/* ── Typography helpers ── */
-.display { font-family: var(--font-display); }
-.text-balance { text-wrap: balance; }
-
-/* ── Hero gradient ── */
-.hero-gradient { background: var(--hero-gradient); }
-.card-shadow { box-shadow: var(--card-shadow); }
-.card-shadow-hover { box-shadow: var(--card-shadow-hover); }
-
-/* ── Typing dots ── */
+/* ── Chat typing dots ── */
 @keyframes dot-bounce {
   0%,80%,100% { transform: translateY(0); }
   40%         { transform: translateY(-5px); }
@@ -252,7 +195,36 @@
 
 /* ── Chat bubble ── */
 @keyframes bubble-in {
-  from { opacity:0; transform:scale(0.85) translateY(8px); }
-  to   { opacity:1; transform:scale(1) translateY(0); }
+  from { opacity: 0; transform: scale(0.85) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 .bubble-in { animation: bubble-in 0.2s ease-out; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #22c55e44; }
+
+/* ── Hero gradient (navy) ── */
+.hero-gradient { background: var(--hero-gradient); }
+
+/* ── Button primary = emerald everywhere ── */
+.btn-primary {
+  background: #22c55e;
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: #16a34a; }
+
+/* ── Focus ring = emerald ── */
+*:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* ── Shadcn button overrides → emerald ── */
+.bg-primary { background-color: #22c55e !important; }
+.hover\:bg-primary\/90:hover { background-color: #16a34a !important; }

@@ -1,14 +1,14 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Briefcase, BookmarkCheck, User,
   MessageSquare, TrendingUp, Sparkles, Upload, LogOut,
   Mic, FileText, Building2, Map, Linkedin, Kanban,
-  FileEdit, DollarSign, Settings,
+  FileEdit, DollarSign, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import CitySwitcher from "./CitySwitcher";
 
 const NAV_GROUPS = [
   {
@@ -23,10 +23,10 @@ const NAV_GROUPS = [
   {
     label: "Tools",
     items: [
-      { label: "Interview Prep",   href: "/interview",       icon: Mic },
-      { label: "Resume Builder",   href: "/resume-builder",  icon: FileText },
-      { label: "Cover Letter",     href: "/cover-letter",    icon: FileEdit },
-      { label: "Salary Coach",     href: "/salary-coach",    icon: DollarSign },
+      { label: "Interview Prep",  href: "/interview",      icon: Mic },
+      { label: "Resume Builder",  href: "/resume-builder", icon: FileText },
+      { label: "Cover Letter",    href: "/cover-letter",   icon: FileEdit },
+      { label: "Salary Coach",    href: "/salary-coach",   icon: DollarSign },
     ],
   },
   {
@@ -40,8 +40,8 @@ const NAV_GROUPS = [
   },
   {
     items: [
-      { label: "Saved Jobs",  href: "/saved",   icon: BookmarkCheck },
-      { label: "My Profile",  href: "/profile", icon: User },
+      { label: "Saved Jobs", href: "/saved",   icon: BookmarkCheck },
+      { label: "My Profile", href: "/profile", icon: User },
     ],
   },
 ];
@@ -49,63 +49,123 @@ const NAV_GROUPS = [
 const Sidebar = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const [expanded, setExpanded] = useState(false);
   const isActive = (href: string) => location.pathname === href;
 
   return (
-    <aside
-      className="fixed left-0 top-0 h-full z-40 flex flex-col items-center py-4 gap-1"
-      style={{
-        width: "var(--sidebar-width)",
-        background: "var(--sidebar-bg)",
-        borderRight: "1px solid var(--sidebar-border)",
-      }}
-    >
-      {/* Logo mark */}
-      <Link to="/dashboard" className="mb-4">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ background: "#22c55e" }}>
-          <Sparkles className="h-4.5 w-4.5 text-white" style={{ width: 18, height: 18 }} />
-        </div>
-      </Link>
+    <>
+      {/* Backdrop when expanded on mobile */}
+      {expanded && (
+        <div className="fixed inset-0 z-30 md:hidden" onClick={() => setExpanded(false)} />
+      )}
 
-      {/* Nav items */}
-      <nav className="flex-1 flex flex-col items-center gap-0.5 w-full px-3 overflow-y-auto">
-        {NAV_GROUPS.map((group, gi) => (
-          <div key={gi} className={cn("flex flex-col items-center gap-0.5 w-full", gi > 0 && "mt-2 pt-2 border-t")}
-            style={{ borderColor: "var(--sidebar-border)" }}>
-            {group.items.map(({ label, href, icon: Icon }) => (
-              <Link key={href} to={href} className="w-full flex justify-center">
-                <div className={cn("sidebar-icon-btn", isActive(href) && "active")}>
-                  <Icon style={{ width: 18, height: 18 }} />
-                  <span className="tooltip">{label}</span>
-                </div>
-              </Link>
-            ))}
+      <aside
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+        className="fixed left-0 top-0 h-full z-40 flex flex-col py-3 transition-all duration-200 ease-out overflow-hidden"
+        style={{
+          width: expanded ? "220px" : "60px",
+          background: "#0a0a0a",
+          borderRight: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: expanded ? "4px 0 24px rgba(0,0,0,0.25)" : "none",
+        }}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-3 mb-4 h-10 shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
+            <Sparkles style={{ width: 16, height: 16, color: "white" }} />
           </div>
-        ))}
-      </nav>
-
-      {/* Bottom: city + user + signout */}
-      <div className="flex flex-col items-center gap-2 mt-2 px-3 w-full border-t pt-3"
-        style={{ borderColor: "var(--sidebar-border)" }}>
-        {/* User avatar */}
-        <div className="sidebar-icon-btn">
-          <Avatar className="h-7 w-7">
-            <AvatarImage src={user?.avatar} />
-            <AvatarFallback className="text-xs font-semibold"
-              style={{ background: "#22c55e", color: "#fff" }}>
-              {user?.name?.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <span className="tooltip">{user?.name}</span>
+          {expanded && (
+            <span className="font-bold text-white text-base tracking-tight whitespace-nowrap overflow-hidden">
+              Role<span style={{ color: "#22c55e" }}>Match</span>
+            </span>
+          )}
         </div>
-        {/* Sign out */}
-        <button className="sidebar-icon-btn" onClick={signOut}>
-          <LogOut style={{ width: 16, height: 16 }} />
-          <span className="tooltip">Sign out</span>
-        </button>
-      </div>
-    </aside>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 space-y-4">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi} className={cn(gi > 0 && "pt-3 border-t")}
+              style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+              {expanded && group.label && (
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-2 mb-1.5 whitespace-nowrap"
+                  style={{ color: "rgba(255,255,255,0.3)" }}>
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map(({ label, href, icon: Icon }) => {
+                  const active = isActive(href);
+                  return (
+                    <Link key={href} to={href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg transition-all duration-150 group",
+                        expanded ? "px-2.5 py-2" : "px-2 py-2 justify-center",
+                        active
+                          ? "bg-emerald-500/15 text-emerald-400"
+                          : "text-white/45 hover:text-white/90 hover:bg-white/7"
+                      )}
+                      style={{
+                        background: active && !expanded ? "rgba(34,197,94,0.12)" : undefined,
+                      }}
+                    >
+                      <Icon className="shrink-0" style={{ width: 17, height: 17 }} />
+                      {expanded && (
+                        <span className="text-sm font-medium whitespace-nowrap overflow-hidden flex-1">
+                          {label}
+                        </span>
+                      )}
+                      {expanded && active && (
+                        <ChevronRight className="shrink-0 opacity-50" style={{ width: 13, height: 13 }} />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {/* Bottom: user + signout */}
+        <div className="mt-2 px-2 pt-3 border-t space-y-0.5 shrink-0"
+          style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+          <div className={cn(
+            "flex items-center gap-3 rounded-lg py-2",
+            expanded ? "px-2.5" : "px-2 justify-center"
+          )}
+            style={{ background: "rgba(255,255,255,0.05)" }}>
+            <Avatar className="h-7 w-7 shrink-0">
+              <AvatarImage src={user?.avatar} />
+              <AvatarFallback className="text-xs font-bold text-white"
+                style={{ background: "#22c55e" }}>
+                {user?.name?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            {expanded && (
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
+                <p className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  {user?.email}
+                </p>
+              </div>
+            )}
+          </div>
+          <button onClick={signOut}
+            className={cn(
+              "flex items-center gap-3 rounded-lg py-2 w-full transition-colors",
+              expanded ? "px-2.5" : "px-2 justify-center",
+              "text-white/40 hover:text-red-400 hover:bg-red-500/10"
+            )}>
+            <LogOut style={{ width: 15, height: 15, flexShrink: 0 }} />
+            {expanded && <span className="text-sm font-medium">Sign out</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* Spacer so content doesn't hide under sidebar */}
+      <div className="hidden md:block shrink-0 transition-all duration-200"
+        style={{ width: "60px" }} />
+    </>
   );
 };
 
