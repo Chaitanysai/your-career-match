@@ -1,171 +1,146 @@
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard, Briefcase, BookmarkCheck, User,
-  MessageSquare, TrendingUp, Sparkles, Upload, LogOut,
-  Mic, FileText, Building2, Map, Linkedin, Kanban,
-  FileEdit, DollarSign, ChevronRight,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const NAV_GROUPS = [
-  {
-    items: [
-      { label: "Dashboard",      href: "/dashboard",       icon: LayoutDashboard },
-      { label: "Job Board",      href: "/jobs",            icon: Briefcase },
-      { label: "Resume Matcher", href: "/match",           icon: Upload },
-      { label: "Skill Gap",      href: "/skillgap",        icon: TrendingUp },
-      { label: "AI Advisor",     href: "/advisor",         icon: MessageSquare },
-    ],
-  },
-  {
-    label: "Tools",
-    items: [
-      { label: "Interview Prep",  href: "/interview",      icon: Mic },
-      { label: "Resume Builder",  href: "/resume-builder", icon: FileText },
-      { label: "Cover Letter",    href: "/cover-letter",   icon: FileEdit },
-      { label: "Salary Coach",    href: "/salary-coach",   icon: DollarSign },
-    ],
-  },
-  {
-    label: "Research",
-    items: [
-      { label: "Company Research", href: "/company-research", icon: Building2 },
-      { label: "Career Roadmap",   href: "/career-roadmap",  icon: Map },
-      { label: "LinkedIn",         href: "/linkedin",         icon: Linkedin },
-      { label: "Job Tracker",      href: "/tracker",          icon: Kanban },
-    ],
-  },
-  {
-    items: [
-      { label: "Saved Jobs", href: "/saved",   icon: BookmarkCheck },
-      { label: "My Profile", href: "/profile", icon: User },
-    ],
-  },
+/* ── Nav groups exactly matching the screenshot ── */
+const NAV_MAIN = [
+  { label: "Dashboard",      href: "/dashboard",       icon: "dashboard" },
+  { label: "Job Board",      href: "/jobs",            icon: "work" },
+  { label: "Resume Matcher", href: "/match",           icon: "description" },
+  { label: "Skill Gap",      href: "/skillgap",        icon: "analytics" },
+  { label: "AI Advisor",     href: "/advisor",         icon: "psychology" },
 ];
+const NAV_TOOLS = [
+  { label: "Interview Prep",  href: "/interview",      icon: "record_voice_over" },
+  { label: "Resume Builder",  href: "/resume-builder", icon: "edit_document" },
+  { label: "Cover Letter",    href: "/cover-letter",   icon: "mail" },
+  { label: "Salary Coach",    href: "/salary-coach",   icon: "payments" },
+];
+const NAV_RESEARCH = [
+  { label: "Company Research", href: "/company-research", icon: "corporate_fare" },
+  { label: "Career Roadmap",   href: "/career-roadmap",  icon: "map" },
+  { label: "LinkedIn",         href: "/linkedin",         icon: "group" },
+  { label: "Job Tracker",      href: "/tracker",          icon: "view_kanban" },
+];
+
+const NavItem = ({ href, icon, label, active }: { href: string; icon: string; label: string; active: boolean }) => (
+  <Link
+    to={href}
+    className={`flex items-center gap-3 px-4 py-2.5 text-sm tracking-tight transition-all duration-150 ${
+      active ? "sidebar-nav-active" : "sidebar-nav-item"
+    }`}
+    style={{ fontFamily: "var(--font-headline)", fontWeight: active ? 600 : 500 }}
+  >
+    <span className="material-symbols-outlined" style={{
+      fontSize: 19,
+      fontVariationSettings: active ? "'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24" : "'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24"
+    }}>
+      {icon}
+    </span>
+    <span>{label}</span>
+  </Link>
+);
 
 const Sidebar = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const [expanded, setExpanded] = useState(false);
   const isActive = (href: string) => location.pathname === href;
 
   return (
-    <>
-      {/* Backdrop when expanded on mobile */}
-      {expanded && (
-        <div className="fixed inset-0 z-30 md:hidden" onClick={() => setExpanded(false)} />
-      )}
-
-      <aside
-        onMouseEnter={() => setExpanded(true)}
-        onMouseLeave={() => setExpanded(false)}
-        className="fixed left-0 top-0 h-full z-40 flex flex-col py-3 transition-all duration-200 ease-out overflow-hidden"
-        style={{
-          width: expanded ? "220px" : "60px",
-          background: "#0a0a0a",
-          borderRight: "1px solid rgba(255,255,255,0.07)",
-          boxShadow: expanded ? "4px 0 24px rgba(0,0,0,0.25)" : "none",
-        }}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-3 mb-4 h-10 shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
-            <Sparkles style={{ width: 16, height: 16, color: "white" }} />
-          </div>
-          {expanded && (
-            <span className="font-bold text-white text-base tracking-tight whitespace-nowrap overflow-hidden">
-              Role<span style={{ color: "#22c55e" }}>Match</span>
+    <aside
+      className="fixed left-0 top-0 h-full z-40 flex flex-col py-6 px-3 overflow-y-auto no-scrollbar w-64"
+      style={{
+        background: "rgba(242,244,246,0.92)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderRight: "none", /* No-Line rule */
+      }}
+    >
+      {/* Brand */}
+      <div className="px-3 mb-8">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+            style={{ background: "var(--primary)" }}>
+            <span className="material-symbols-outlined text-white" style={{ fontSize: 15, fontVariationSettings: "'FILL' 1" }}>
+              psychology
             </span>
-          )}
+          </div>
+          <div>
+            <p className="text-base font-bold tracking-tight" style={{ fontFamily: "var(--font-headline)", color: "var(--on-surface)" }}>
+              RoleMatch
+            </p>
+            <p className="text-[10px]" style={{ color: "var(--on-surface-variant)", opacity: 0.7 }}>AI Career Suite</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main nav */}
+      <nav className="flex-1 space-y-1">
+        {NAV_MAIN.map(({ label, href, icon }) => (
+          <NavItem key={href} href={href} icon={icon} label={label} active={isActive(href)} />
+        ))}
+
+        {/* Tools section */}
+        <div className="pt-5 pb-1">
+          <p className="px-4 text-[10px] font-bold uppercase tracking-widest mb-2"
+            style={{ color: "var(--outline)" }}>
+            Tools
+          </p>
+          {NAV_TOOLS.map(({ label, href, icon }) => (
+            <NavItem key={href} href={href} icon={icon} label={label} active={isActive(href)} />
+          ))}
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 space-y-4">
-          {NAV_GROUPS.map((group, gi) => (
-            <div key={gi} className={cn(gi > 0 && "pt-3 border-t")}
-              style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-              {expanded && group.label && (
-                <p className="text-[10px] font-semibold uppercase tracking-widest px-2 mb-1.5 whitespace-nowrap"
-                  style={{ color: "rgba(255,255,255,0.3)" }}>
-                  {group.label}
-                </p>
-              )}
-              <div className="space-y-0.5">
-                {group.items.map(({ label, href, icon: Icon }) => {
-                  const active = isActive(href);
-                  return (
-                    <Link key={href} to={href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg transition-all duration-150 group",
-                        expanded ? "px-2.5 py-2" : "px-2 py-2 justify-center",
-                        active
-                          ? "bg-emerald-500/15 text-emerald-400"
-                          : "text-white/45 hover:text-white/90 hover:bg-white/7"
-                      )}
-                      style={{
-                        background: active && !expanded ? "rgba(34,197,94,0.12)" : undefined,
-                      }}
-                    >
-                      <Icon className="shrink-0" style={{ width: 17, height: 17 }} />
-                      {expanded && (
-                        <span className="text-sm font-medium whitespace-nowrap overflow-hidden flex-1">
-                          {label}
-                        </span>
-                      )}
-                      {expanded && active && (
-                        <ChevronRight className="shrink-0 opacity-50" style={{ width: 13, height: 13 }} />
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
+        {/* Research section */}
+        <div className="pt-4 pb-1">
+          <p className="px-4 text-[10px] font-bold uppercase tracking-widest mb-2"
+            style={{ color: "var(--outline)" }}>
+            Research
+          </p>
+          {NAV_RESEARCH.map(({ label, href, icon }) => (
+            <NavItem key={href} href={href} icon={icon} label={label} active={isActive(href)} />
           ))}
-        </nav>
+        </div>
+      </nav>
 
-        {/* Bottom: user + signout */}
-        <div className="mt-2 px-2 pt-3 border-t space-y-0.5 shrink-0"
-          style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-          <div className={cn(
-            "flex items-center gap-3 rounded-lg py-2",
-            expanded ? "px-2.5" : "px-2 justify-center"
-          )}
-            style={{ background: "rgba(255,255,255,0.05)" }}>
-            <Avatar className="h-7 w-7 shrink-0">
-              <AvatarImage src={user?.avatar} />
-              <AvatarFallback className="text-xs font-bold text-white"
-                style={{ background: "#22c55e" }}>
-                {user?.name?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            {expanded && (
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
-                <p className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
-                  {user?.email}
-                </p>
-              </div>
-            )}
-          </div>
-          <button onClick={signOut}
-            className={cn(
-              "flex items-center gap-3 rounded-lg py-2 w-full transition-colors",
-              expanded ? "px-2.5" : "px-2 justify-center",
-              "text-white/40 hover:text-red-400 hover:bg-red-500/10"
-            )}>
-            <LogOut style={{ width: 15, height: 15, flexShrink: 0 }} />
-            {expanded && <span className="text-sm font-medium">Sign out</span>}
+      {/* Bottom section — matches screenshot exactly */}
+      <div className="pt-5 mt-2 space-y-1" style={{ borderTop: "1px solid rgba(0,105,71,0.10)" }}>
+        {/* Upgrade to Pro button */}
+        <div className="px-2 mb-4">
+          <button className="btn-primary-stitch w-full justify-center py-2.5">
+            <span className="material-symbols-outlined" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1" }}>
+              workspace_premium
+            </span>
+            Upgrade to Pro
           </button>
         </div>
-      </aside>
 
-      {/* Spacer so content doesn't hide under sidebar */}
-      <div className="hidden md:block shrink-0 transition-all duration-200"
-        style={{ width: "60px" }} />
-    </>
+        <NavItem href="/profile" icon="person" label="My Profile" active={isActive("/profile")} />
+        <NavItem href="/saved" icon="bookmark" label="Saved Jobs" active={isActive("/saved")} />
+
+        {/* User row */}
+        <div className="flex items-center gap-2.5 px-3 py-2.5 mt-2 rounded-lg"
+          style={{ background: "rgba(0,105,71,0.06)" }}>
+          <Avatar className="h-6 w-6 shrink-0">
+            <AvatarImage src={user?.avatar} />
+            <AvatarFallback className="text-xs font-bold text-white"
+              style={{ background: "var(--primary)", fontSize: 10 }}>
+              {user?.name?.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold truncate" style={{ fontFamily: "var(--font-headline)", color: "var(--on-surface)" }}>
+              {user?.name}
+            </p>
+          </div>
+          <button onClick={signOut} title="Sign out"
+            className="sidebar-nav-item p-1 rounded-lg"
+            style={{ color: "var(--outline)" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
   );
 };
 

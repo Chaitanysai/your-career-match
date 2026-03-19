@@ -1,174 +1,170 @@
 import { useState, useRef, useEffect } from "react";
-import { Bell, Search, Menu, X, Check, Briefcase, TrendingUp, MessageSquare, Star, ChevronDown } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import CitySwitcher from "./CitySwitcher";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavigate } from "react-router-dom";
+import CitySwitcher from "./CitySwitcher";
 import { cn } from "@/lib/utils";
 
-interface TopbarProps {
-  onMenuClick?: () => void;
-  title?: string;
-}
-
 const NOTIFICATIONS = [
-  { id: 1, icon: Briefcase,    color: "#22c55e", title: "New job match!",           body: "Senior React Developer at Swiggy — 94% match",         time: "2m ago",  read: false },
-  { id: 2, icon: TrendingUp,   color: "#3b82f6", title: "Skill gap update",          body: "TypeScript is now top skill in Hyderabad market",       time: "1h ago",  read: false },
-  { id: 3, icon: MessageSquare,color: "#8b5cf6", title: "AI Advisor tip",            body: "Your resume score can improve by adding certifications", time: "3h ago",  read: false },
-  { id: 4, icon: Star,         color: "#f59e0b", title: "Profile milestone",         body: "You've hit 70+ job matches this month!",                time: "1d ago",  read: true  },
-  { id: 5, icon: Briefcase,    color: "#22c55e", title: "Job alert",                 body: "Razorpay is hiring Full Stack Developers in Bengaluru",  time: "2d ago",  read: true  },
+  { id: 1, icon: "work",            color: "#006947", title: "New job match!",       body: "Senior React Developer at Swiggy — 94% match",       time: "2m",  read: false },
+  { id: 2, icon: "analytics",       color: "#3b82f6", title: "Skill gap update",     body: "TypeScript is top demand in Hyderabad right now",     time: "1h",  read: false },
+  { id: 3, icon: "psychology",      color: "#7c3aed", title: "AI Advisor tip",       body: "Add certifications to boost your profile score by 8%", time: "3h",  read: false },
+  { id: 4, icon: "workspace_premium", color: "#d97706", title: "Profile milestone", body: "You've hit 70+ job matches — you're on a streak!",    time: "1d",  read: true  },
+  { id: 5, icon: "work",            color: "#006947", title: "Job alert",            body: "Razorpay is hiring Full Stack Engineers in Bengaluru", time: "2d",  read: true  },
 ];
 
-const Topbar = ({ onMenuClick, title }: TopbarProps) => {
+const Topbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
+  const [notifs, setNotifs] = useState(NOTIFICATIONS);
   const notifRef = useRef<HTMLDivElement>(null);
+  const unread = notifs.filter((n) => !n.read).length;
 
-  const unread = notifications.filter((n) => !n.read).length;
-
-  // Close on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
-      }
+    const h = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const markAllRead = () => setNotifications((n) => n.map((x) => ({ ...x, read: true })));
-  const markRead = (id: number) => setNotifications((n) => n.map((x) => x.id === id ? { ...x, read: true } : x));
+  const markRead = (id: number) => setNotifs((n) => n.map((x) => x.id === id ? { ...x, read: true } : x));
+  const markAll = () => setNotifs((n) => n.map((x) => ({ ...x, read: true })));
 
   return (
-    <header className="h-14 sticky top-0 z-30 flex items-center px-5 gap-3"
-      style={{
-        background: "rgba(248,247,244,0.92)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(0,0,0,0.07)",
-      }}>
+    <header className="topbar-glass sticky top-0 z-30 flex items-center px-8 h-16 gap-4">
 
       {/* Mobile menu */}
       {onMenuClick && (
-        <button className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 transition-colors"
-          onClick={onMenuClick}>
-          <Menu className="h-4 w-4 text-black/60" />
+        <button onClick={onMenuClick}
+          className="md:hidden p-2 rounded-xl transition-colors"
+          style={{ background: "transparent" }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--surface-container)"}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+          <span className="material-symbols-outlined" style={{ color: "var(--on-surface-variant)" }}>menu</span>
         </button>
       )}
 
-      {/* Page title */}
-      {title && (
-        <h1 className="font-semibold text-sm text-black/80 hidden sm:block tracking-tight">{title}</h1>
-      )}
-
-      <div className="flex-1" />
-
-      {/* Search */}
-      <div className="relative hidden lg:block">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-black/30" />
-        <input
-          placeholder="Search anything..."
-          className="pl-9 h-8 w-52 text-sm bg-black/[0.05] border border-black/[0.08] rounded-lg outline-none focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 transition-all placeholder:text-black/30"
-        />
+      {/* Search — pill shape, no border */}
+      <div className="flex items-center flex-1 max-w-xl">
+        <div className="relative w-full">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ fontSize: 18, color: "var(--on-surface-variant)", opacity: 0.5 }}>
+            search
+          </span>
+          <input className="input-stitch" placeholder="Search for jobs, skills, or mentors..." />
+        </div>
       </div>
 
-      {/* City switcher */}
-      <CitySwitcher variant="navbar" />
+      <div className="flex items-center gap-2 ml-auto">
+        {/* City switcher */}
+        <CitySwitcher variant="navbar" />
 
-      {/* ── Notification bell ── */}
-      <div className="relative" ref={notifRef}>
-        <button
-          onClick={() => setNotifOpen(!notifOpen)}
-          className={cn(
-            "relative w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-            notifOpen ? "bg-black/10" : "hover:bg-black/[0.06]"
-          )}>
-          <Bell className="h-4 w-4 text-black/60" />
-          {unread > 0 && (
-            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
-              {unread}
-            </span>
-          )}
-        </button>
+        {/* Notifications */}
+        <div className="relative" ref={notifRef}>
+          <button
+            onClick={() => setNotifOpen(!notifOpen)}
+            className="relative p-2 rounded-full transition-colors"
+            style={{ background: notifOpen ? "var(--surface-container)" : "transparent" }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--surface-container)"}
+            onMouseLeave={e => { if (!notifOpen) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--on-surface-variant)" }}>notifications</span>
+            {unread > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                style={{ background: "var(--error)" }} />
+            )}
+          </button>
 
-        {/* Notification panel */}
-        {notifOpen && (
-          <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-black/[0.08] shadow-xl overflow-hidden z-50">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.06]">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-black">Notifications</span>
-                {unread > 0 && (
-                  <span className="text-[10px] font-bold bg-emerald-500 text-white rounded-full px-1.5 py-0.5">{unread} new</span>
-                )}
+          {/* Notification dropdown */}
+          {notifOpen && (
+            <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl z-50 overflow-hidden"
+              style={{
+                background: "var(--surface-container-lowest)",
+                boxShadow: "0 16px 48px rgba(25,28,30,0.14), 0 4px 12px rgba(25,28,30,0.06)",
+              }}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3"
+                style={{ borderBottom: "1px solid var(--surface-container-low)" }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold" style={{ fontFamily: "var(--font-headline)", color: "var(--on-surface)" }}>
+                    Notifications
+                  </span>
+                  {unread > 0 && (
+                    <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full"
+                      style={{ background: "var(--error)" }}>{unread} new</span>
+                  )}
+                </div>
+                <button onClick={markAll}
+                  className="text-xs font-semibold" style={{ color: "var(--primary)" }}>
+                  Mark all read
+                </button>
               </div>
-              <button onClick={markAllRead}
-                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
-                <Check className="h-3 w-3" />Mark all read
-              </button>
-            </div>
 
-            {/* List */}
-            <div className="max-h-80 overflow-y-auto">
-              {notifications.map((n) => {
-                const Icon = n.icon;
-                return (
-                  <div key={n.id}
-                    onClick={() => markRead(n.id)}
-                    className={cn(
-                      "flex gap-3 px-4 py-3 cursor-pointer transition-colors border-b last:border-0",
-                      n.read ? "bg-white hover:bg-black/[0.02]" : "bg-emerald-50/60 hover:bg-emerald-50",
-                      "border-black/[0.04]"
-                    )}>
+              {/* Items */}
+              <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                {notifs.map((n) => (
+                  <div key={n.id} onClick={() => markRead(n.id)}
+                    className="flex gap-3 px-4 py-3 cursor-pointer transition-all"
+                    style={{
+                      background: n.read ? "transparent" : "rgba(0,105,71,0.035)",
+                    }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--surface-container-low)"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = n.read ? "transparent" : "rgba(0,105,71,0.035)"}>
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                      style={{ background: `${n.color}18` }}>
-                      <Icon className="h-4 w-4" style={{ color: n.color }} />
+                      style={{ background: `${n.color}15` }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 15, color: n.color }}>{n.icon}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={cn("text-xs font-semibold truncate", n.read ? "text-black/70" : "text-black")}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-semibold" style={{ color: n.read ? "var(--on-surface-variant)" : "var(--on-surface)", fontFamily: "var(--font-headline)" }}>
                           {n.title}
                         </p>
-                        <span className="text-[10px] text-black/30 shrink-0">{n.time}</span>
+                        <span className="text-[10px] shrink-0" style={{ color: "var(--outline)" }}>{n.time}</span>
                       </div>
-                      <p className="text-xs text-black/45 mt-0.5 leading-relaxed line-clamp-2">{n.body}</p>
+                      <p className="text-xs mt-0.5 leading-relaxed line-clamp-2" style={{ color: "var(--on-surface-variant)" }}>
+                        {n.body}
+                      </p>
                     </div>
                     {!n.read && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
+                      <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: "var(--primary)" }} />
                     )}
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
 
-            {/* Footer */}
-            <div className="px-4 py-2.5 border-t border-black/[0.06] text-center">
-              <button className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">
-                View all notifications
-              </button>
+              {/* Footer */}
+              <div className="px-4 py-2.5 text-center" style={{ borderTop: "1px solid var(--surface-container-low)" }}>
+                <button className="text-xs font-semibold" style={{ color: "var(--primary)" }}>
+                  View all notifications
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Avatar — opens profile */}
-      <button
-        onClick={() => navigate("/profile")}
-        className="flex items-center gap-2 rounded-xl px-2 py-1 hover:bg-black/[0.06] transition-colors group">
-        <Avatar className="h-7 w-7 ring-2 ring-transparent group-hover:ring-emerald-400 transition-all">
-          <AvatarImage src={user?.avatar} />
-          <AvatarFallback className="text-xs font-bold text-white bg-emerald-500">
-            {user?.name?.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="hidden sm:block text-left">
-          <p className="text-xs font-semibold text-black/80 leading-tight">{user?.name?.split(" ")[0]}</p>
+          )}
         </div>
-        <ChevronDown className="h-3 w-3 text-black/30 hidden sm:block" />
-      </button>
+
+        {/* Settings icon */}
+        <button className="p-2 rounded-full transition-colors"
+          style={{ background: "transparent" }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--surface-container)"}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+          <span className="material-symbols-outlined" style={{ color: "var(--on-surface-variant)" }}>settings</span>
+        </button>
+
+        {/* Avatar */}
+        <button onClick={() => navigate("/profile")} className="p-0.5 rounded-full transition-all"
+          style={{ outline: "2px solid transparent" }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.outline = "2px solid var(--primary)"}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.outline = "2px solid transparent"}>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user?.avatar} />
+            <AvatarFallback className="text-xs font-bold text-white"
+              style={{ background: "var(--primary)", fontFamily: "var(--font-headline)" }}>
+              {user?.name?.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+      </div>
     </header>
   );
 };

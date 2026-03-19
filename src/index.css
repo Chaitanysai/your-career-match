@@ -1,176 +1,385 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   THE DIGITAL ARCHITECT — FULL DESIGN SYSTEM
+   Based on DESIGN.md + Stitch HTML tokens
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
 @layer base {
   :root {
-    --background: 40 20% 97%;
-    --foreground: 0 0% 6%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 6%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 6%;
+    /* ── Surface Hierarchy (No-Line philosophy) ── */
+    --surface:                    #f7f9fb;
+    --surface-bright:             #f7f9fb;
+    --surface-dim:                #d8dadc;
+    --surface-container-low:      #f2f4f6;
+    --surface-container:          #eceef0;
+    --surface-container-high:     #e5e8ea;
+    --surface-container-highest:  #e0e3e5;
+    --surface-container-lowest:   #ffffff;
+    --surface-variant:            #e0e3e5;
+    --surface-tint:               #006c49;
 
-    /* Emerald green as primary accent everywhere */
-    --primary: 152 72% 36%;
+    /* ── Primary: Deep Emerald ── */
+    --primary:                    #006947;
+    --primary-container:          #00855b;
+    --primary-fixed-dim:          #4edea3;
+    --on-primary:                 #ffffff;
+    --on-primary-container:       #f5fff6;
+    --on-primary-fixed:           #002113;
+    --on-primary-fixed-variant:   #005236;
+
+    /* ── On-surface / text ── */
+    --on-surface:                 #191c1e;
+    --on-surface-variant:         #3d4a42;
+    --outline:                    #6d7a72;
+    --outline-variant:            #bccac0;
+
+    /* ── Background ── */
+    --background:                 #f7f9fb;
+    --on-background:              #191c1e;
+
+    /* ── Secondary ── */
+    --secondary:                  #565e74;
+    --secondary-container:        #dae2fd;
+    --secondary-fixed:            #dae2fd;
+    --secondary-fixed-dim:        #bec6e0;
+    --on-secondary:               #ffffff;
+    --on-secondary-container:     #5c647a;
+    --on-secondary-fixed:         #131b2e;
+    --on-secondary-fixed-variant: #3f465c;
+
+    /* ── Tertiary / Error ── */
+    --tertiary:                   #9b3e3b;
+    --tertiary-container:         #ba5551;
+    --tertiary-fixed:             #ffdad7;
+    --tertiary-fixed-dim:         #ffb3ae;
+    --on-tertiary:                #ffffff;
+    --on-tertiary-container:      #fffbff;
+    --on-tertiary-fixed:          #410004;
+    --on-tertiary-fixed-variant:  #7f2928;
+    --error:                      #ba1a1a;
+    --error-container:            #ffdad6;
+    --on-error:                   #ffffff;
+    --on-error-container:         #93000a;
+
+    /* ── Inverse ── */
+    --inverse-surface:            #2d3133;
+    --inverse-on-surface:         #eff1f3;
+    --inverse-primary:            #4edea3;
+
+    /* ── Elevation / Depth (ambient, never harsh) ── */
+    --elevation-1: 0 1px 3px rgba(25,28,30,0.05), 0 1px 2px rgba(25,28,30,0.04);
+    --elevation-2: 0 4px 12px rgba(25,28,30,0.07), 0 2px 4px rgba(25,28,30,0.04);
+    --elevation-3: 0 8px 24px rgba(25,28,30,0.08), 0 4px 8px rgba(25,28,30,0.04);
+    --elevation-4: 0 16px 40px rgba(25,28,30,0.10), 0 8px 16px rgba(25,28,30,0.05);
+    --elevation-modal: 0 24px 56px rgba(25,28,30,0.14), 0 8px 20px rgba(25,28,30,0.06);
+
+    /* ── Typography ── */
+    --font-headline: 'Manrope', sans-serif;
+    --font-body:     'Inter', sans-serif;
+    --font-label:    'Inter', sans-serif;
+
+    /* ── Sidebar (dark, light emerald tint) ── */
+    --sidebar-bg:       #f2f4f6;
+    --sidebar-active-bg:#ffffff;
+    --sidebar-active-border: #006947;
+    --sidebar-text:     #3d4a42;
+    --sidebar-text-active: #006947;
+    --sidebar-hover-bg: rgba(0,105,71,0.06);
+    --sidebar-border:   rgba(0,105,71,0.08);
+
+    /* ── Tailwind CSS variable compatibility ── */
+    --background-tw:      210 17% 98%;
+    --foreground:         210 11% 11%;
+    --card:               0 0% 100%;
+    --card-foreground:    210 11% 11%;
+    --popover:            0 0% 100%;
+    --popover-foreground: 210 11% 11%;
+    --primary-tw:         158 100% 21%;
     --primary-foreground: 0 0% 100%;
-    --accent: 152 72% 36%;
-    --accent-foreground: 0 0% 100%;
-
-    --secondary: 40 15% 93%;
-    --secondary-foreground: 0 0% 20%;
-    --muted: 40 15% 92%;
-    --muted-foreground: 0 0% 45%;
-    --destructive: 0 84% 60%;
+    --secondary-tw:       224 14% 40%;
+    --secondary-foreground: 0 0% 100%;
+    --muted:              155 12% 94%;
+    --muted-foreground:   155 12% 40%;
+    --accent:             158 100% 21%;
+    --accent-foreground:  0 0% 100%;
+    --destructive:        0 72% 42%;
     --destructive-foreground: 0 0% 100%;
-    --border: 40 10% 88%;
-    --input: 40 10% 88%;
-    --ring: 152 72% 36%;
-    --radius: 0.875rem;
-
-    /* Sidebar */
-    --sidebar-bg: #0a0a0a;
-    --sidebar-icon: rgba(255,255,255,0.45);
-    --sidebar-icon-active: #ffffff;
-    --sidebar-active-bg: rgba(34,197,94,0.12);
-    --sidebar-hover-bg: rgba(255,255,255,0.06);
-    --sidebar-border: rgba(255,255,255,0.07);
-
-    /* Emerald tokens used globally */
-    --green: #22c55e;
-    --green-dark: #16a34a;
-    --green-light: #f0fdf4;
-    --green-border: #bbf7d0;
-
-    /* Shadows */
-    --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 28px rgba(0,0,0,0.09), 0 4px 8px rgba(0,0,0,0.04);
-
-    /* Grid dot */
-    --grid-dot: rgba(0,0,0,0.07);
-
-    /* Typography */
-    --font-body: 'Geist', system-ui, sans-serif;
-    --font-display: 'Instrument Serif', Georgia, serif;
+    --border:             150 14% 74%;
+    --input:              150 14% 88%;
+    --ring:               158 100% 21%;
+    --radius:             0.75rem;
 
     /* Legacy compat */
-    --hero-gradient: linear-gradient(135deg, #060d1f 0%, #0f2040 50%, #152a52 100%);
-    --card-shadow: var(--shadow-sm);
-    --card-shadow-hover: var(--shadow-md);
-    --accent-500: #22c55e;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-border-var: 220 13% 91%;
-    --sidebar-ring: 152 72% 36%;
+    --hero-gradient: linear-gradient(135deg, #001a0f 0%, #004d33 55%, #006947 100%);
+    --card-shadow: var(--elevation-1);
+    --card-shadow-hover: var(--elevation-2);
+    --accent-500: #006947;
+    --green: #006947;
+    --green-dark: #004d33;
+    --green-light: #f0fdf9;
+    --sidebar-background: 0 0% 95%;
+    --sidebar-foreground: 155 12% 26%;
+    --sidebar-primary: 158 100% 21%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-border-var: 150 14% 88%;
+    --sidebar-ring: 158 100% 21%;
   }
 
+  /* Dark mode */
   .dark {
-    --background: 0 0% 5%;
-    --foreground: 0 0% 95%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 152 60% 45%;
-    --primary-foreground: 0 0% 5%;
-    --accent: 152 60% 45%;
-    --accent-foreground: 0 0% 5%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 85%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 50%;
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
-    --grid-dot: rgba(255,255,255,0.04);
-    --sidebar-background: 0 0% 5%;
-    --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 152 60% 45%;
-    --sidebar-primary-foreground: 0 0% 5%;
-    --sidebar-border-var: 0 0% 12%;
+    --surface:                  #0e1210;
+    --surface-container-low:    #131610;
+    --surface-container:        #181c18;
+    --surface-container-high:   #1e221e;
+    --surface-container-highest:#232722;
+    --surface-container-lowest: #0a0d0a;
+    --on-surface:               #e0e3de;
+    --on-surface-variant:       #c1ccc2;
+    --background:               #0e1210;
+    --on-background:            #e0e3de;
+    --outline:                  #8b9990;
+    --outline-variant:          #3d4a42;
+    --background-tw:            155 20% 6%;
+    --foreground:               80 5% 89%;
+    --card:                     155 12% 9%;
+    --muted:                    155 8% 14%;
+    --muted-foreground:         155 8% 60%;
+    --border:                   155 8% 18%;
+    --input:                    155 8% 18%;
+    --sidebar-bg:               #0a0d0a;
+    --sidebar-text:             rgba(224,227,222,0.55);
+    --sidebar-text-active:      #ffffff;
+    --sidebar-active-bg:        rgba(0,105,71,0.18);
+    --sidebar-hover-bg:         rgba(0,105,71,0.10);
   }
 }
 
+/* ━━ Global base ━━ */
 @layer base {
-  * { @apply border-border; box-sizing: border-box; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--surface);
+    color: var(--on-surface);
     font-family: var(--font-body);
     font-size: 14px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-headline);
+    color: var(--on-surface);
+    line-height: 1.2;
+  }
+
+  /* Material Symbols */
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-style: normal;
+    font-size: 20px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    flex-shrink: 0;
+  }
+  .material-fill {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
 }
 
-/* ── Dotted grid (Clerk style) ── */
-.dot-grid {
-  background-image: radial-gradient(circle, var(--grid-dot) 1px, transparent 1px);
-  background-size: 22px 22px;
+/* ━━ Surface / background utilities ━━ */
+.bg-surface               { background-color: var(--surface); }
+.bg-surface-low           { background-color: var(--surface-container-low); }
+.bg-surface-container     { background-color: var(--surface-container); }
+.bg-surface-high          { background-color: var(--surface-container-high); }
+.bg-surface-highest       { background-color: var(--surface-container-highest); }
+.bg-surface-lowest        { background-color: var(--surface-container-lowest); }
+.text-on-surface          { color: var(--on-surface); }
+.text-on-surface-variant  { color: var(--on-surface-variant); }
+.text-primary-stitch      { color: var(--primary); }
+
+/* ━━ The "No-Line" card philosophy ━━
+   Cards float via surface contrast only — no borders */
+.card-stitch {
+  background-color: var(--surface-container-lowest);
+  border-radius: 1.5rem;           /* rounded-3xl */
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.card-stitch:hover {
+  box-shadow: var(--elevation-2);
+}
+.card-stitch-container {
+  background-color: var(--surface-container);
+  border-radius: 1.5rem;
+}
+.card-stitch-low {
+  background-color: var(--surface-container-low);
+  border-radius: 1.5rem;
 }
 
-/* ── Premium card ── */
-.card-premium {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: 14px;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+/* ━━ Legacy compatibility ━━ */
+.card-premium       { background-color: var(--surface-container-lowest); border-radius: 1.5rem; }
+.card-shadow        { box-shadow: var(--elevation-1); }
+.card-shadow-hover  { box-shadow: var(--elevation-2); }
+
+/* ━━ Sidebar — Light emerald tint (matches screenshot) ━━ */
+.sidebar-bg-stitch {
+  background-color: var(--sidebar-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
-.card-premium:hover {
-  box-shadow: var(--shadow-md);
-}
-.card-shadow { box-shadow: var(--card-shadow); }
-.card-shadow-hover { box-shadow: var(--card-shadow-hover); }
-
-/* ── Consistent green accent used everywhere ── */
-.accent { color: #22c55e; }
-.bg-accent-soft { background: #f0fdf4; border: 1px solid #bbf7d0; }
-.text-accent { color: #22c55e !important; }
-
-/* Override shadcn accent to emerald */
-.bg-accent { background-color: #22c55e !important; }
-.text-accent-foreground { color: #fff !important; }
-.border-accent { border-color: #22c55e !important; }
-.ring-accent { --tw-ring-color: #22c55e !important; }
-
-/* ── Stat card colored left border ── */
-.stat-accent-green { border-left: 3px solid #22c55e; }
-.stat-accent-blue  { border-left: 3px solid #3b82f6; }
-.stat-accent-amber { border-left: 3px solid #f59e0b; }
-.stat-accent-red   { border-left: 3px solid #ef4444; }
-
-/* ── Badge ── */
-.badge-green {
-  background: #f0fdf4;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
-  font-size: 11px;
+.sidebar-nav-active {
+  background-color: var(--sidebar-active-bg);
+  border-left: 4px solid var(--sidebar-active-border);
+  border-radius: 0.5rem;
+  color: var(--sidebar-text-active) !important;
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  box-shadow: var(--elevation-1);
+}
+.sidebar-nav-item {
+  border-radius: 0.5rem;
+  color: var(--sidebar-text);
+  transition: background 0.15s, color 0.15s;
+}
+.sidebar-nav-item:hover {
+  background-color: var(--sidebar-hover-bg);
+  color: var(--primary);
 }
 
-/* ── Animations ── */
+/* ━━ Topbar glass ━━ */
+.topbar-glass {
+  background: rgba(247, 249, 251, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(188, 202, 192, 0.35);
+}
+
+/* ━━ Hero card (dark green, from screenshot) ━━ */
+.hero-card {
+  background: linear-gradient(135deg, #001f10 0%, #004433 55%, #006947 100%);
+  border-radius: 1.75rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 80% 20%, rgba(78,222,163,0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+.hero-gradient { background: var(--hero-gradient); }
+
+/* ━━ Buttons ━━ */
+.btn-primary-stitch {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-headline);
+  padding: 0.625rem 1.5rem;
+  font-size: 0.875rem;
+  border: none; cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+}
+.btn-primary-stitch:hover   { opacity: 0.90; }
+.btn-primary-stitch:active  { transform: scale(0.96); }
+
+.btn-ghost-stitch {
+  background: transparent;
+  color: var(--primary);
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: inline-flex; align-items: center; gap: 0.375rem;
+}
+.btn-ghost-stitch:hover { background: rgba(0,105,71,0.07); }
+
+/* ━━ Input — no border, surface-container-high bg ━━ */
+.input-stitch {
+  background: var(--surface-container-high);
+  border: none; outline: none;
+  border-radius: 999px;
+  padding: 8px 16px 8px 42px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--on-surface);
+  width: 100%;
+  transition: box-shadow 0.15s;
+}
+.input-stitch:focus {
+  box-shadow: 0 0 0 2.5px rgba(0,105,71,0.22);
+}
+.input-stitch::placeholder { color: var(--outline); }
+
+/* ━━ Match badge ━━ */
+.match-badge {
+  background: rgba(0,105,71,0.10);
+  color: var(--primary);
+  font-size: 11px; font-weight: 700;
+  padding: 3px 8px; border-radius: 6px;
+  font-family: var(--font-headline);
+}
+
+/* ━━ Chip ━━ */
+.chip {
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
+  font-size: 12px; font-weight: 600;
+  padding: 4px 12px; border-radius: 999px;
+  font-family: var(--font-label);
+}
+
+/* ━━ Progress track ━━ */
+.progress-track {
+  background: var(--surface-container-high);
+  border-radius: 999px; overflow: hidden; height: 10px;
+}
+.progress-fill   { background: var(--primary); border-radius: 999px; height: 100%; }
+.progress-amber  { background: #d97706; border-radius: 999px; height: 100%; }
+
+/* ━━ FAB ━━ */
+.fab {
+  background: var(--primary); color: var(--on-primary);
+  border-radius: 999px; width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 24px rgba(0,105,71,0.35);
+  border: none; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.fab:hover { transform: scale(1.08); box-shadow: 0 8px 30px rgba(0,105,71,0.45); }
+
+/* ━━ Animations ━━ */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.fade-up   { animation: fade-up 0.3s ease-out both; }
-.fade-up-1 { animation-delay: 0.04s; }
-.fade-up-2 { animation-delay: 0.08s; }
-.fade-up-3 { animation-delay: 0.12s; }
-.fade-up-4 { animation-delay: 0.16s; }
-.fade-up-5 { animation-delay: 0.20s; }
+.fade-up   { animation: fade-up 0.32s ease-out both; }
+.fade-up-1 { animation-delay: 0.05s; }
+.fade-up-2 { animation-delay: 0.10s; }
+.fade-up-3 { animation-delay: 0.15s; }
+.fade-up-4 { animation-delay: 0.20s; }
+.fade-up-5 { animation-delay: 0.25s; }
 
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(14px); }
@@ -178,53 +387,32 @@
 }
 .animate-fade-in-up { animation: fade-in-up 0.35s ease-out forwards; }
 
-@keyframes pulse-slow {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.55; }
-}
+@keyframes pulse-slow { 0%,100%{opacity:1} 50%{opacity:0.55} }
 .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
 
-/* ── Chat typing dots ── */
+/* ━━ Chat bubble ━━ */
+@keyframes bubble-in {
+  from { opacity:0; transform:scale(0.85) translateY(8px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+.bubble-in { animation: bubble-in 0.2s ease-out; }
+
+/* ━━ Typing dots ━━ */
 @keyframes dot-bounce {
-  0%,80%,100% { transform: translateY(0); }
-  40%         { transform: translateY(-5px); }
+  0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)}
 }
 .typing-dot { animation: dot-bounce 1.2s infinite; }
 .typing-dot:nth-child(2) { animation-delay: 0.15s; }
 .typing-dot:nth-child(3) { animation-delay: 0.3s; }
 
-/* ── Chat bubble ── */
-@keyframes bubble-in {
-  from { opacity: 0; transform: scale(0.85) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-.bubble-in { animation: bubble-in 0.2s ease-out; }
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
+/* ━━ Scrollbar ━━ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #22c55e44; }
+::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: 4px; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Hero gradient (navy) ── */
-.hero-gradient { background: var(--hero-gradient); }
-
-/* ── Button primary = emerald everywhere ── */
-.btn-primary {
-  background: #22c55e;
-  color: white;
-  border-radius: 10px;
-  font-weight: 600;
-  transition: background 0.15s;
-}
-.btn-primary:hover { background: #16a34a; }
-
-/* ── Focus ring = emerald ── */
-*:focus-visible {
-  outline: 2px solid #22c55e;
-  outline-offset: 2px;
-}
-
-/* ── Shadcn button overrides → emerald ── */
-.bg-primary { background-color: #22c55e !important; }
-.hover\:bg-primary\/90:hover { background-color: #16a34a !important; }
+/* ━━ Text utilities ━━ */
+.text-accent     { color: var(--primary) !important; }
+.bg-accent       { background-color: var(--primary) !important; }
+.text-accent-green { color: var(--primary); }
