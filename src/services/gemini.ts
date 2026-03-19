@@ -1,33 +1,37 @@
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
-// ── Content type accepted from Index.tsx ────────────────────────
+// ── Model fallback chain (tried in order) ────────────────────────
+const GEMINI_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
+  "gemini-1.5-pro",
+];
+
+const geminiUrl = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
 export interface ResumeContent {
-  text?: string;       // for .txt files
-  base64?: string;     // for .pdf / .doc files
+  text?: string;
+  base64?: string;
   mimeType?: string;
 }
 
-// ── Build Gemini parts array from content ────────────────────────
-function buildParts(content: ResumeContent, prompt: string) {
+function buildGeminiParts(content: ResumeContent, prompt: string) {
   if (content.base64 && content.mimeType) {
-    // Send PDF as inline data — Gemini can natively read PDFs
     return [
-      {
-        inline_data: {
-          mime_type: content.mimeType,
-          data: content.base64,
-        },
-      },
+      { inline_data: { mime_type: content.mimeType, data: content.base64 } },
       { text: prompt },
     ];
   }
-  // Plain text
   return [{ text: `${prompt}\n\nRESUME CONTENT:\n${(content.text || "").slice(0, 6000)}` }];
 }
 
-async function callGemini(parts: any[]): Promise<string> {
-  const res = await fetch(GEMINI_URL, {
+async function tryGeminiModel(model: string, parts: any[]): Promise<string> {
+  const res = await fetch(geminiUrl(model), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -35,12 +39,82 @@ async function callGemini(parts: any[]): Promise<string> {
       generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
     }),
   });
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(`Gemini error: ${res.status} — ${err?.error?.message || "Unknown error"}`);
+    const msg = err?.error?.message || `HTTP ${res.status}`;
+    throw new Error(`RETRYABLE:${msg}`);
   }
+
   const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  if (!text) throw new Error("RETRYABLE:empty response");
+  return text;
+}
+
+async function tryGroqFallback(prompt: string): Promise<string> {
+  if (!GROQ_API_KEY) throw new Error("No Groq API key");
+
+  const res = await fetch(GROQ_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.4,
+      max_tokens: 2048,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Groq error ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
+// ── Master call — tries all models, falls back to Groq ───────────
+async function callAI(content: ResumeContent | null, prompt: string): Promise<string> {
+  const parts = content ? buildGeminiParts(content, prompt) : [{ text: prompt }];
+
+  // Try each Gemini model
+  for (const model of GEMINI_MODELS) {
+    try {
+      const result = await tryGeminiModel(model, parts);
+      console.log(`✓ AI: ${model}`);
+      return result;
+    } catch (err: any) {
+      console.warn(`✗ ${model} failed:`, err.message);
+    }
+  }
+
+  // All Gemini failed — use Groq
+  console.warn("All Gemini models exhausted → Groq fallback");
+  const groqPrompt = content?.text
+    ? `${prompt}\n\nRESUME CONTENT:\n${content.text.slice(0, 6000)}`
+    : prompt;
+  return tryGroqFallback(groqPrompt);
+}
+
+// ── Safe JSON parse ──────────────────────────────────────────────
+function safeParseJSON<T>(raw: string, fallback: T): T {
+  try {
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const objStart = clean.indexOf("{");
+    const objEnd = clean.lastIndexOf("}") + 1;
+    if (objStart !== -1 && objEnd > objStart) return JSON.parse(clean.slice(objStart, objEnd));
+    const arrStart = clean.indexOf("[");
+    const arrEnd = clean.lastIndexOf("]") + 1;
+    if (arrStart !== -1 && arrEnd > arrStart) return JSON.parse(clean.slice(arrStart, arrEnd));
+    return JSON.parse(clean);
+  } catch {
+    return fallback;
+  }
 }
 
 // ── Resume Analysis ──────────────────────────────────────────────
@@ -54,47 +128,38 @@ export interface ResumeAnalysis {
   salaryRange: { min: number; max: number };
 }
 
-export async function analyzeResume(
-  content: ResumeContent,
-  city: string
-): Promise<ResumeAnalysis> {
+export async function analyzeResume(content: ResumeContent, city: string): Promise<ResumeAnalysis> {
   const prompt = `You are an expert Indian job market career advisor. Analyze this resume for the ${city} job market.
 
-Respond with ONLY valid JSON (no markdown, no backticks, no extra text):
+Respond with ONLY valid JSON (no markdown, no backticks):
 {
   "suggestedTitle": "most fitting job title",
   "experience": "X years",
-  "skills": ["skill1", "skill2", "skill3", "skill4", "skill5"],
+  "skills": ["skill1","skill2","skill3","skill4","skill5"],
   "summary": "2-sentence professional summary",
-  "strengths": ["strength1", "strength2", "strength3"],
-  "improvements": ["improvement1", "improvement2"],
+  "strengths": ["strength1","strength2","strength3"],
+  "improvements": ["area1","area2"],
   "salaryRange": { "min": 8, "max": 15 }
 }
+salaryRange must be realistic LPA for ${city}.`;
 
-salaryRange must be in LPA (Lakhs Per Annum) appropriate for ${city} market.`;
-
-  const parts = buildParts(content, prompt);
-  const raw = await callGemini(parts);
-  const clean = raw.replace(/```json|```/g, "").trim();
-  const start = clean.indexOf("{");
-  const end = clean.lastIndexOf("}") + 1;
-  return JSON.parse(clean.slice(start, end));
+  const raw = await callAI(content, prompt);
+  return safeParseJSON(raw, {
+    suggestedTitle: "Software Engineer", experience: "3-5 years",
+    skills: ["JavaScript", "React", "Node.js"],
+    summary: "Experienced software professional.",
+    strengths: ["Technical skills", "Problem solving"],
+    improvements: ["Add certifications", "More projects"],
+    salaryRange: { min: 8, max: 15 },
+  });
 }
 
 // ── Job Matching ─────────────────────────────────────────────────
 export interface MatchedJob {
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  salaryMin: number;
-  salaryMax: number;
-  matchScore: number;
-  description: string;
-  skills: string[];
-  url: string;
-  postedDate: string;
-  whyMatch: string;
+  title: string; company: string; location: string;
+  type: string; salaryMin: number; salaryMax: number;
+  matchScore: number; description: string; skills: string[];
+  url: string; postedDate: string; whyMatch: string;
 }
 
 export async function matchJobs(
@@ -102,55 +167,29 @@ export async function matchJobs(
   city: string,
   userSkills: string[]
 ): Promise<MatchedJob[]> {
-  const skillsHint = userSkills.length > 0 ? `Candidate skills: ${userSkills.join(", ")}` : "";
+  const prompt = `You are an expert Indian job recruiter. Generate 6 realistic job listings for ${city} matching this candidate.
+${userSkills.length ? `Candidate skills: ${userSkills.join(", ")}` : ""}
 
-  const prompt = `You are an expert Indian job recruiter. Generate 6 realistic job listings for ${city} that match this candidate's resume.
+Use real Indian companies in ${city}: Flipkart, Swiggy, Razorpay, Zepto, CRED, PhonePe, Infosys, TCS, Amazon India, Microsoft India, etc.
 
-${skillsHint}
+Respond with ONLY a valid JSON array (no markdown):
+[{"title":"","company":"","location":"${city}","type":"Full-time","salaryMin":12,"salaryMax":18,"matchScore":92,"description":"","skills":[],"url":"#","postedDate":"2h ago","whyMatch":""}]
 
-Use real Indian company names active in ${city} (e.g. Flipkart, Swiggy, Razorpay, Zepto, CRED, PhonePe, Infosys, TCS, Wipro, Amazon India, etc.)
+Rules: salary in LPA, matchScore 65-96, mix company sizes.`;
 
-Respond with ONLY a valid JSON array (no markdown, no backticks):
-[
-  {
-    "title": "job title",
-    "company": "real company name",
-    "location": "${city}",
-    "type": "Full-time",
-    "salaryMin": 12,
-    "salaryMax": 18,
-    "matchScore": 92,
-    "description": "2-sentence job description",
-    "skills": ["skill1", "skill2", "skill3"],
-    "url": "#",
-    "postedDate": "2h ago",
-    "whyMatch": "one sentence why this matches the candidate"
-  }
-]
-
-Rules:
-- Salary in LPA (Lakhs Per Annum)
-- matchScore between 65-96
-- Mix of startup, MNC and product companies
-- postedDate should vary: "1h ago", "3h ago", "1d ago", "2d ago" etc.`;
-
-  const parts = buildParts(content, prompt);
-  const raw = await callGemini(parts);
-  const clean = raw.replace(/```json|```/g, "").trim();
-  const start = clean.indexOf("[");
-  const end = clean.lastIndexOf("]") + 1;
-  return JSON.parse(clean.slice(start, end));
+  const raw = await callAI(content, prompt);
+  const parsed = safeParseJSON<MatchedJob[]>(raw, []);
+  return Array.isArray(parsed) && parsed.length > 0 ? parsed : [
+    { title: "Software Engineer", company: "TCS", location: city, type: "Full-time",
+      salaryMin: 8, salaryMax: 15, matchScore: 75, description: "Build enterprise solutions.",
+      skills: ["Java", "SQL"], url: "#", postedDate: "1d ago", whyMatch: "Matches your background" },
+  ];
 }
 
 // ── Skill Gap Analysis ───────────────────────────────────────────
 export interface SkillGapResult {
   cityDemand: { skill: string; demand: number; youHave: boolean }[];
-  missingSkills: {
-    skill: string;
-    priority: "high" | "medium" | "low";
-    timeToLearn: string;
-    resources: string[];
-  }[];
+  missingSkills: { skill: string; priority: "high"|"medium"|"low"; timeToLearn: string; resources: string[] }[];
   marketInsight: string;
   salaryImpact: string;
 }
@@ -160,43 +199,22 @@ export async function analyzeSkillGap(
   jobTitle: string,
   city: string
 ): Promise<SkillGapResult> {
-  const prompt = `You are an Indian tech job market expert. Analyze skill gaps for a ${jobTitle} role in ${city}.
+  const prompt = `Indian tech market expert. Skill gap analysis for ${jobTitle} in ${city}.
+Candidate skills: ${userSkills.join(", ")}
 
-Candidate's current skills: ${userSkills.join(", ")}
-
-Respond with ONLY valid JSON (no markdown, no backticks):
+Respond ONLY valid JSON (no markdown):
 {
-  "cityDemand": [
-    { "skill": "React", "demand": 92, "youHave": true },
-    { "skill": "TypeScript", "demand": 88, "youHave": false }
-  ],
-  "missingSkills": [
-    {
-      "skill": "skill name",
-      "priority": "high",
-      "timeToLearn": "2-3 months",
-      "resources": ["free resource 1", "free resource 2"]
-    }
-  ],
-  "marketInsight": "2-sentence insight about ${jobTitle} demand in ${city}",
-  "salaryImpact": "Adding these skills could increase salary by X-Y LPA in ${city}"
+  "cityDemand":[{"skill":"React","demand":92,"youHave":true}],
+  "missingSkills":[{"skill":"","priority":"high","timeToLearn":"2-3 months","resources":[]}],
+  "marketInsight":"2 sentences about ${jobTitle} demand in ${city}",
+  "salaryImpact":"Adding skills could increase salary by X-Y LPA in ${city}"
 }
+10 skills in cityDemand, top 4 missing skills.`;
 
-Include 10 skills in cityDemand and top 4 missing skills.`;
-
-  const res = await fetch(GEMINI_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
-    }),
+  const raw = await callAI(null, prompt);
+  return safeParseJSON(raw, {
+    cityDemand: [], missingSkills: [],
+    marketInsight: `${jobTitle} roles are in demand in ${city}.`,
+    salaryImpact: `Improving skills could add 3-5 LPA in ${city}.`,
   });
-  if (!res.ok) throw new Error(`Gemini error: ${res.status}`);
-  const data = await res.json();
-  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  const clean = raw.replace(/```json|```/g, "").trim();
-  const start = clean.indexOf("{");
-  const end = clean.lastIndexOf("}") + 1;
-  return JSON.parse(clean.slice(start, end));
 }
