@@ -1,5 +1,8 @@
-import { useState } from "react";
-import { Search, SlidersHorizontal, X, Briefcase } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Search, SlidersHorizontal, X, Briefcase,
+  RefreshCw, ExternalLink, Zap, Bot, AlertCircle
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,99 +12,68 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, DollarSign, Clock, ExternalLink } from "lucide-react";
 import { useCity } from "@/hooks/useCity";
+import { useToast } from "@/hooks/use-toast";
+import { searchJobs, normaliseJSearchJob } from "@/services/jsearch";
+import { matchJobs } from "@/services/gemini";
+import { buildPortalSearchUrl, ALL_PORTALS } from "@/lib/portals";
+import JobCard, { UnifiedJob } from "@/components/jobs/JobCard";
 
-interface Job {
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  salaryMin: number;
-  salaryMax: number;
-  matchScore: number;
-  description: string;
-  skills: string[];
-  url: string;
-  postedDate: string;
-}
-
-const generateJobs = (cityName: string): Job[] => [
-  { title: "Senior Frontend Engineer", company: "Flipkart", location: cityName, type: "Hybrid", salaryMin: 22, salaryMax: 35, matchScore: 94, description: "Build scalable frontend systems for India's largest e-commerce platform. Work with React, TypeScript and micro-frontends.", skills: ["React", "TypeScript", "GraphQL", "Micro-frontends"], url: "#", postedDate: "2h ago" },
-  { title: "Full Stack Developer", company: "Razorpay", location: cityName, type: "Full-time", salaryMin: 18, salaryMax: 28, matchScore: 87, description: "Build payment infrastructure used by millions of Indian businesses. Full ownership of features end-to-end.", skills: ["React", "Node.js", "PostgreSQL", "AWS"], url: "#", postedDate: "5h ago" },
-  { title: "React Developer", company: "Swiggy", location: cityName, type: "Full-time", salaryMin: 15, salaryMax: 25, matchScore: 82, description: "Build the app that feeds India. Work on high-traffic consumer products used by crores of users daily.", skills: ["React", "Redux", "TypeScript", "REST APIs"], url: "#", postedDate: "1d ago" },
-  { title: "Software Engineer II", company: "CRED", location: cityName, type: "Full-time", salaryMin: 20, salaryMax: 30, matchScore: 79, description: "Build premium fintech products for India's creditworthy population. High ownership, fast-paced culture.", skills: ["TypeScript", "React", "Go", "Kafka"], url: "#", postedDate: "1d ago" },
-  { title: "Frontend Engineer", company: "Zepto", location: cityName, type: "On-site", salaryMin: 16, salaryMax: 24, matchScore: 75, description: "Power India's fastest grocery delivery app. Work on real-time tracking, inventory and checkout flows.", skills: ["React Native", "React", "TypeScript", "Redis"], url: "#", postedDate: "2d ago" },
-  { title: "UI Engineer", company: "Meesho", location: cityName, type: "Hybrid", salaryMin: 12, salaryMax: 20, matchScore: 71, description: "Enable small businesses across India to sell online. Build inclusive, vernacular-first shopping experiences.", skills: ["React", "TypeScript", "Tailwind CSS", "i18n"], url: "#", postedDate: "3d ago" },
-  { title: "Software Development Engineer", company: "Amazon India", location: cityName, type: "Full-time", salaryMin: 25, salaryMax: 45, matchScore: 68, description: "Work on systems that power Amazon's India operations. Large-scale distributed systems engineering.", skills: ["Java", "React", "AWS", "System Design"], url: "#", postedDate: "3d ago" },
-  { title: "Product Engineer", company: "PhonePe", location: cityName, type: "Full-time", salaryMin: 18, salaryMax: 30, matchScore: 65, description: "Build UPI-based payment experiences for 500M+ users. Work at the intersection of finance and technology.", skills: ["React", "Node.js", "TypeScript", "PostgreSQL"], url: "#", postedDate: "4d ago" },
+const JOB_TYPES = ["Full-time", "Part-time", "Contract", "Internship"];
+const EXPERIENCE_LEVELS = [
+  { label: "Fresher (0-1 yr)", value: "fresher" },
+  { label: "Junior (1-3 yrs)", value: "junior" },
+  { label: "Mid-level (3-5 yrs)", value: "mid" },
+  { label: "Senior (5-8 yrs)", value: "senior" },
+  { label: "Lead/Staff (8+ yrs)", value: "lead" },
 ];
 
-const jobTypes = ["Full-time", "Part-time", "Contract", "Hybrid", "Remote"];
-const workModes = ["On-site", "Hybrid", "Full-time", "Remote"];
+const POPULAR_ROLES = [
+  "Software Engineer", "React Developer", "Data Scientist",
+  "Product Manager", "DevOps Engineer", "UI/UX Designer",
+  "Full Stack Developer", "Machine Learning Engineer",
+];
 
-const JobCard = ({ job }: { job: Job }) => {
-  const scoreColor =
-    job.matchScore >= 85 ? "bg-accent/10 text-accent border-accent/20" :
-    job.matchScore >= 70 ? "bg-primary/10 text-primary border-primary/20" :
-    "bg-muted text-muted-foreground border-border";
+interface Filters {
+  types: string[];
+  minSalary: number;
+  minMatch: number;
+  remote: boolean;
+  datePosted: string;
+  experience: string;
+}
 
-  return (
-    <div className="bg-card rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all border border-border/50 hover:border-accent/20 group">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h3 className="font-heading font-semibold text-base text-foreground">{job.title}</h3>
-            <Badge className={`text-xs font-bold shrink-0 border ${scoreColor}`}>{job.matchScore}% match</Badge>
-          </div>
-          <p className="text-sm font-medium text-accent">{job.company}</p>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-3">
-        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location}</span>
-        <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" />{job.type}</span>
-        <span className="flex items-center gap-1 font-semibold text-foreground">
-          ₹{job.salaryMin}L – ₹{job.salaryMax}L
-        </span>
-        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{job.postedDate}</span>
-      </div>
-
-      <p className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-2">{job.description}</p>
-
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {job.skills.map((s) => (
-          <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
-        ))}
-      </div>
-
-      <a href={job.url} target="_blank" rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
-        View Job <ExternalLink className="h-3 w-3" />
-      </a>
-    </div>
-  );
+const defaultFilters: Filters = {
+  types: [], minSalary: 0, minMatch: 0,
+  remote: false, datePosted: "month", experience: "",
 };
 
-const FilterPanel = ({ filters, setFilters, onReset }: any) => (
-  <div className="space-y-6">
+// ── Filter Panel ─────────────────────────────────────────────────
+const FilterPanel = ({ filters, setFilters, onReset }: {
+  filters: Filters;
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  onReset: () => void;
+}) => (
+  <div className="space-y-5">
     <div className="flex items-center justify-between">
-      <h3 className="font-heading font-semibold text-foreground">Filters</h3>
-      <Button variant="ghost" size="sm" onClick={onReset} className="text-muted-foreground h-auto p-0 hover:text-foreground text-xs">
+      <span className="font-heading font-semibold text-sm text-foreground">Filters</span>
+      <Button variant="ghost" size="sm" onClick={onReset} className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground">
         Reset all
       </Button>
     </div>
 
     <div>
-      <Label className="text-sm font-medium mb-3 block">Job Type</Label>
+      <Label className="text-xs font-medium mb-2.5 block">Job Type</Label>
       <div className="space-y-2">
-        {jobTypes.map((type) => (
+        {JOB_TYPES.map((type) => (
           <div key={type} className="flex items-center gap-2">
-            <Checkbox id={type}
+            <Checkbox id={`type-${type}`}
               checked={filters.types.includes(type)}
-              onCheckedChange={(checked) =>
-                setFilters((f: any) => ({ ...f, types: checked ? [...f.types, type] : f.types.filter((t: string) => t !== type) }))} />
-            <label htmlFor={type} className="text-sm cursor-pointer">{type}</label>
+              onCheckedChange={(c) => setFilters((f) => ({
+                ...f,
+                types: c ? [...f.types, type] : f.types.filter((t) => t !== type),
+              }))} />
+            <label htmlFor={`type-${type}`} className="text-sm cursor-pointer">{type}</label>
           </div>
         ))}
       </div>
@@ -110,139 +82,392 @@ const FilterPanel = ({ filters, setFilters, onReset }: any) => (
     <Separator />
 
     <div>
-      <Label className="text-sm font-medium mb-3 block">
-        Min Salary: <span className="text-accent">₹{filters.minSalary}L</span>
-      </Label>
-      <Slider min={0} max={40} step={2} value={[filters.minSalary]}
-        onValueChange={([v]) => setFilters((f: any) => ({ ...f, minSalary: v }))} />
+      <Label className="text-xs font-medium mb-2.5 block">Experience Level</Label>
+      <Select value={filters.experience} onValueChange={(v) => setFilters((f) => ({ ...f, experience: v }))}>
+        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Any level" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="any">Any level</SelectItem>
+          {EXPERIENCE_LEVELS.map(({ label, value }) => (
+            <SelectItem key={value} value={value}>{label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
 
     <Separator />
 
     <div>
-      <Label className="text-sm font-medium mb-3 block">
-        Min Match: <span className="text-accent">{filters.minMatch}%</span>
+      <Label className="text-xs font-medium mb-2.5 block">
+        Date Posted
       </Label>
-      <Slider min={0} max={100} step={5} value={[filters.minMatch]}
-        onValueChange={([v]) => setFilters((f: any) => ({ ...f, minMatch: v }))} />
+      <Select value={filters.datePosted} onValueChange={(v) => setFilters((f) => ({ ...f, datePosted: v }))}>
+        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="today">Today</SelectItem>
+          <SelectItem value="3days">Last 3 days</SelectItem>
+          <SelectItem value="week">Last week</SelectItem>
+          <SelectItem value="month">Last month</SelectItem>
+          <SelectItem value="all">All time</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+
+    <Separator />
+
+    <div>
+      <Label className="text-xs font-medium mb-2.5 block">
+        Min Salary: <span className="text-accent font-semibold">₹{filters.minSalary}L</span>
+      </Label>
+      <Slider min={0} max={50} step={2} value={[filters.minSalary]}
+        onValueChange={([v]) => setFilters((f) => ({ ...f, minSalary: v }))} />
+    </div>
+
+    <Separator />
+
+    <div>
+      <Label className="text-xs font-medium mb-2.5 block">
+        Min Match Score: <span className="text-accent font-semibold">{filters.minMatch}%</span>
+      </Label>
+      <Slider min={0} max={90} step={5} value={[filters.minMatch]}
+        onValueChange={([v]) => setFilters((f) => ({ ...f, minMatch: v }))} />
+    </div>
+
+    <Separator />
+
+    <div className="flex items-center gap-2">
+      <Checkbox id="remote" checked={filters.remote}
+        onCheckedChange={(c) => setFilters((f) => ({ ...f, remote: !!c }))} />
+      <label htmlFor="remote" className="text-sm cursor-pointer">Remote / WFH only</label>
     </div>
   </div>
 );
 
+// ── Main JobBoard ─────────────────────────────────────────────────
 const JobBoard = () => {
   const { city } = useCity();
+  const { toast } = useToast();
+
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("match");
-  const [filters, setFilters] = useState({ types: [], minSalary: 0, minMatch: 0 });
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const [jobs, setJobs] = useState<UnifiedJob[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [source, setSource] = useState<"live" | "ai" | "mixed" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
-  const JOBS = generateJobs(city.name);
+  const activeFilterCount =
+    filters.types.length +
+    (filters.minSalary > 0 ? 1 : 0) +
+    (filters.minMatch > 0 ? 1 : 0) +
+    (filters.remote ? 1 : 0) +
+    (filters.experience ? 1 : 0);
 
-  const resetFilters = () => setFilters({ types: [], minSalary: 0, minMatch: 0 });
+  const fetchJobs = useCallback(async (query: string, pageNum = 1) => {
+    if (!query.trim()) return;
+    setLoading(true);
+    setError(null);
 
-  const activeFilterCount = filters.types.length + (filters.minSalary > 0 ? 1 : 0) + (filters.minMatch > 0 ? 1 : 0);
+    try {
+      // Try JSearch first (real jobs)
+      const raw = await searchJobs({
+        query,
+        location: city.name,
+        employmentType: filters.types[0],
+        datePosted: filters.datePosted as any,
+        remoteOnly: filters.remote,
+        page: pageNum,
+      });
 
-  const filtered = JOBS
-    .filter((job) => {
-      const q = search.toLowerCase();
-      const matchesSearch = !q || job.title.toLowerCase().includes(q) || job.company.toLowerCase().includes(q) || job.skills.some((s) => s.toLowerCase().includes(q));
-      const matchesType = !filters.types.length || filters.types.includes(job.type);
-      const matchesSalary = job.salaryMax >= filters.minSalary;
-      const matchesScore = job.matchScore >= filters.minMatch;
-      return matchesSearch && matchesType && matchesSalary && matchesScore;
+      if (raw.length > 0) {
+        const normalised = raw.map((j, i) =>
+          normaliseJSearchJob(j, 95 - i * 3 + Math.floor(Math.random() * 8))
+        );
+        setJobs((prev) => pageNum === 1 ? normalised : [...prev, ...normalised]);
+        setSource(pageNum === 1 ? "live" : "mixed");
+      } else {
+        throw new Error("No results from JSearch");
+      }
+    } catch (liveErr: any) {
+      // Fallback to Gemini AI jobs
+      try {
+        const aiRaw = await matchJobs(
+          { text: `Job search: ${query} in ${city.name}` },
+          city.name,
+          [query]
+        );
+        const aiJobs: UnifiedJob[] = aiRaw.map((j) => ({
+          ...j,
+          id: Math.random().toString(36).slice(2),
+          source: "ai" as const,
+          isRemote: filters.remote,
+        }));
+        setJobs(aiJobs);
+        setSource("ai");
+
+        if (liveErr.message?.includes("quota")) {
+          toast({
+            title: "Live jobs quota reached",
+            description: "Showing AI-generated matches. Resets next month.",
+          });
+        }
+      } catch (aiErr: any) {
+        setError("Could not load jobs. Please try again.");
+        toast({ title: "Error loading jobs", description: aiErr.message, variant: "destructive" });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [city.name, filters.types, filters.datePosted, filters.remote]);
+
+  // Auto-fetch when city changes
+  useEffect(() => {
+    if (search) { setPage(1); fetchJobs(search, 1); }
+  }, [city.name]);
+
+  const handleSearch = () => {
+    if (!search.trim()) {
+      toast({ title: "Enter a job title or skill to search", variant: "destructive" });
+      return;
+    }
+    setPage(1);
+    fetchJobs(search, 1);
+  };
+
+  const loadMore = () => {
+    const next = page + 1;
+    setPage(next);
+    fetchJobs(search, next);
+  };
+
+  const resetFilters = () => setFilters(defaultFilters);
+
+  // Client-side filter + sort
+  const displayed = jobs
+    .filter((j) => {
+      const matchesType = !filters.types.length || filters.types.some((t) =>
+        j.type.toLowerCase().includes(t.toLowerCase()));
+      const matchesSalary = j.salaryMax >= filters.minSalary;
+      const matchesScore = j.matchScore >= filters.minMatch;
+      const matchesRemote = !filters.remote || j.isRemote;
+      return matchesType && matchesSalary && matchesScore && matchesRemote;
     })
     .sort((a, b) => {
       if (sortBy === "match") return b.matchScore - a.matchScore;
       if (sortBy === "salary") return b.salaryMax - a.salaryMax;
+      if (sortBy === "recent") return a.postedDate.localeCompare(b.postedDate);
       return a.title.localeCompare(b.title);
     });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+      {/* Header */}
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold text-foreground">Job Board</h1>
-        <p className="text-muted-foreground mt-1">
-          {filtered.length} jobs in <span className="text-accent font-medium">{city.name}</span>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Search real jobs in <span className="text-accent font-medium">{city.name}</span> — powered by JSearch + Gemini AI
         </p>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      {/* Search bar */}
+      <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder={`Search jobs in ${city.name}...`} className="pl-9"
-            value={search} onChange={(e) => setSearch(e.target.value)} />
-          {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-            <X className="h-4 w-4 text-muted-foreground" />
-          </button>}
+          <Input
+            placeholder={`Search jobs in ${city.name}... e.g. React Developer, Data Scientist`}
+            className="pl-9 h-11"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+          {search && (
+            <button onClick={() => { setSearch(""); setJobs([]); }} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            </button>
+          )}
         </div>
+        <Button onClick={handleSearch} disabled={loading} className="h-11 px-6 gap-2 shrink-0">
+          {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          Search
+        </Button>
 
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="match">Best Match</SelectItem>
-            <SelectItem value="salary">Highest Salary</SelectItem>
-            <SelectItem value="title">Job Title</SelectItem>
-          </SelectContent>
-        </Select>
-
+        {/* Mobile filter sheet */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" className="gap-2 sm:hidden">
+            <Button variant="outline" className="h-11 gap-2 sm:hidden shrink-0">
               <SlidersHorizontal className="h-4 w-4" />
-              Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+              {activeFilterCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-accent text-white text-xs flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="left">
+          <SheetContent side="left" className="w-72">
             <SheetHeader className="mb-4"><SheetTitle>Filter Jobs</SheetTitle></SheetHeader>
             <FilterPanel filters={filters} setFilters={setFilters} onReset={resetFilters} />
           </SheetContent>
         </Sheet>
       </div>
 
+      {/* Quick role chips */}
+      {!jobs.length && !loading && (
+        <div className="mb-6">
+          <p className="text-xs text-muted-foreground mb-2">Popular searches in {city.name}:</p>
+          <div className="flex flex-wrap gap-2">
+            {POPULAR_ROLES.map((role) => (
+              <button key={role}
+                onClick={() => { setSearch(role); setTimeout(() => fetchJobs(role, 1), 0); }}
+                className="text-xs px-3 py-1.5 rounded-full border border-border hover:border-accent/50 hover:bg-accent/5 text-muted-foreground hover:text-accent transition-all">
+                {role}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Source indicator + sort */}
+      {jobs.length > 0 && (
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{displayed.length} jobs found</span>
+            {source === "live" && (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                <Zap className="h-3 w-3" />Live from JSearch
+              </span>
+            )}
+            {source === "ai" && (
+              <span className="inline-flex items-center gap-1 text-xs text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                <Bot className="h-3 w-3" />AI-generated
+              </span>
+            )}
+          </div>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-40 h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="match">Best Match</SelectItem>
+              <SelectItem value="salary">Highest Salary</SelectItem>
+              <SelectItem value="recent">Most Recent</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       <div className="flex gap-6">
         {/* Desktop filter sidebar */}
         <aside className="hidden sm:block w-56 shrink-0">
-          <div className="bg-card rounded-xl border border-border/50 p-5 card-shadow sticky top-24">
+          <div className="bg-card rounded-xl border border-border/50 p-4 card-shadow sticky top-24">
             <FilterPanel filters={filters} setFilters={setFilters} onReset={resetFilters} />
+
+            <Separator className="my-4" />
+
+            {/* Search on portals directly */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Search directly on:</p>
+              <div className="space-y-1.5">
+                {ALL_PORTALS.map((portal) => (
+                  <a
+                    key={portal.id}
+                    href={buildPortalSearchUrl(portal.id, search || "software engineer", city.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  >
+                    <span className="font-medium">{portal.name}</span>
+                    <ExternalLink className="h-3 w-3 opacity-50" />
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
         </aside>
 
-        {/* Jobs */}
+        {/* Results */}
         <div className="flex-1 min-w-0">
+          {/* Active filters */}
           {activeFilterCount > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {filters.types.map((t: string) => (
+              {filters.types.map((t) => (
                 <Badge key={t} variant="secondary" className="gap-1">{t}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters((f: any) => ({ ...f, types: f.types.filter((x: string) => x !== t) }))} />
+                  <X className="h-3 w-3 cursor-pointer" onClick={() =>
+                    setFilters((f) => ({ ...f, types: f.types.filter((x) => x !== t) }))} />
                 </Badge>
               ))}
               {filters.minSalary > 0 && (
-                <Badge variant="secondary" className="gap-1">₹{filters.minSalary}L+ salary
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters((f: any) => ({ ...f, minSalary: 0 }))} />
+                <Badge variant="secondary" className="gap-1">₹{filters.minSalary}L+
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters((f) => ({ ...f, minSalary: 0 }))} />
+                </Badge>
+              )}
+              {filters.remote && (
+                <Badge variant="secondary" className="gap-1">Remote
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters((f) => ({ ...f, remote: false }))} />
                 </Badge>
               )}
             </div>
           )}
 
-          {filtered.length === 0 ? (
-            <div className="text-center py-16">
-              <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="font-heading font-semibold text-foreground">No jobs found</p>
-              <p className="text-muted-foreground text-sm mt-1">Try adjusting your search or filters</p>
-              <Button variant="outline" size="sm" className="mt-4" onClick={() => { setSearch(""); resetFilters(); }}>
-                Clear all
-              </Button>
-            </div>
-          ) : (
+          {/* Loading */}
+          {loading && (
             <div className="space-y-4">
-              {filtered.map((job, i) => (
-                <div key={i} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.05}s`, opacity: 0 }}>
-                  <JobCard job={job} />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <RefreshCw className="h-4 w-4 animate-spin text-accent" />
+                Searching live jobs in {city.name}...
+              </div>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-card rounded-xl p-5 border border-border/50 animate-pulse">
+                  <div className="flex gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-muted shrink-0" />
+                    <div className="flex-1">
+                      <div className="h-4 bg-muted rounded w-2/3 mb-2" />
+                      <div className="h-3 bg-muted rounded w-1/3" />
+                    </div>
+                  </div>
+                  <div className="h-3 bg-muted rounded w-full mb-2" />
+                  <div className="h-3 bg-muted rounded w-4/5" />
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Error */}
+          {error && !loading && (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-sm text-destructive">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              {error}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!loading && !error && jobs.length === 0 && (
+            <div className="text-center py-16">
+              <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-40" />
+              <p className="font-heading font-semibold text-foreground mb-1">Search for jobs in {city.name}</p>
+              <p className="text-muted-foreground text-sm">
+                Enter a job title or skill above — we'll search live job portals + AI matching
+              </p>
+            </div>
+          )}
+
+          {/* Job cards */}
+          {!loading && displayed.length > 0 && (
+            <div className="space-y-4">
+              {displayed.map((job, i) => (
+                <div key={job.id || i} className="animate-fade-in-up"
+                  style={{ animationDelay: `${i * 0.04}s`, opacity: 0 }}>
+                  <JobCard job={job} city={city.name} />
+                </div>
+              ))}
+
+              {/* Load more — only for live results */}
+              {source === "live" && displayed.length >= 10 && (
+                <div className="text-center pt-4">
+                  <Button variant="outline" onClick={loadMore} disabled={loading} className="gap-2">
+                    {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                    Load more jobs
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
