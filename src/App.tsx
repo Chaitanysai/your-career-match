@@ -9,7 +9,7 @@ import { CityProvider } from "@/hooks/useCity";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ChatBubble from "@/components/advisor/ChatBubble";
 
-// Pages
+// Pages — existing
 import Landing from "./pages/Landing";
 import IndexPage from "./pages/Index";
 import AuthPage from "./pages/Auth";
@@ -21,11 +21,25 @@ import SkillGapPage from "./pages/SkillGap";
 import AdvisorPage from "./pages/Advisor";
 import NotFound from "./pages/NotFound";
 
+// Pages — new features
+import InterviewPrep from "./pages/InterviewPrep";
+import ResumeBuilder from "./pages/ResumeBuilder";
+
+// Coming soon placeholder
+const ComingSoon = ({ title }: { title: string }) => (
+  <DashboardLayout title={title}>
+    <div className="max-w-2xl mx-auto px-6 py-20 text-center">
+      <div className="text-5xl mb-4">🚧</div>
+      <h2 className="font-heading text-2xl font-bold text-foreground mb-2">{title}</h2>
+      <p className="text-muted-foreground">This feature is coming soon. Check back shortly!</p>
+    </div>
+  </DashboardLayout>
+);
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 60 * 5, retry: 1 } },
 });
 
-// ── Loading spinner ──────────────────────────────────────────────
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-3">
@@ -35,7 +49,6 @@ const Spinner = () => (
   </div>
 );
 
-// ── Protected route ──────────────────────────────────────────────
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
@@ -43,14 +56,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// ── Dashboard page wrapper ───────────────────────────────────────
 const DashPage = ({ children, title }: { children: React.ReactNode; title: string }) => (
   <ProtectedRoute>
     <DashboardLayout title={title}>{children}</DashboardLayout>
   </ProtectedRoute>
 );
 
-// ── Routes ───────────────────────────────────────────────────────
 const AppRoutes = () => {
   const { user } = useAuth();
 
@@ -61,16 +72,8 @@ const AppRoutes = () => {
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<AuthPage />} />
 
-        {/* Resume matcher — protected */}
-        <Route path="/match" element={
-          <ProtectedRoute>
-            <DashboardLayout title="Resume Matcher">
-              <IndexPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-        } />
-
-        {/* Dashboard pages */}
+        {/* Main */}
+        <Route path="/match" element={<DashPage title="Resume Matcher"><IndexPage /></DashPage>} />
         <Route path="/dashboard" element={<DashPage title="Dashboard"><Dashboard /></DashPage>} />
         <Route path="/jobs" element={<DashPage title="Job Board"><JobBoard /></DashPage>} />
         <Route path="/saved" element={<DashPage title="Saved Jobs"><SavedJobs /></DashPage>} />
@@ -78,17 +81,30 @@ const AppRoutes = () => {
         <Route path="/skillgap" element={<SkillGapPage />} />
         <Route path="/advisor" element={<AdvisorPage />} />
 
-        {/* 404 */}
+        {/* Tools */}
+        <Route path="/interview" element={
+          <ProtectedRoute><InterviewPrep /></ProtectedRoute>
+        } />
+        <Route path="/resume-builder" element={
+          <ProtectedRoute><ResumeBuilder /></ProtectedRoute>
+        } />
+        <Route path="/cover-letter" element={<DashPage title="Cover Letter"><ComingSoon title="Cover Letter Generator" /></DashPage>} />
+        <Route path="/salary-coach" element={<DashPage title="Salary Coach"><ComingSoon title="Salary Negotiation Coach" /></DashPage>} />
+
+        {/* Research */}
+        <Route path="/company-research" element={<DashPage title="Company Research"><ComingSoon title="Company Research" /></DashPage>} />
+        <Route path="/career-roadmap" element={<DashPage title="Career Roadmap"><ComingSoon title="Career Roadmap" /></DashPage>} />
+        <Route path="/linkedin" element={<DashPage title="LinkedIn Optimizer"><ComingSoon title="LinkedIn Profile Optimizer" /></DashPage>} />
+        <Route path="/tracker" element={<DashPage title="Job Tracker"><ComingSoon title="Job Application Tracker" /></DashPage>} />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {/* Floating AI chat bubble — shown on all protected pages */}
       {user && <ChatBubble />}
     </>
   );
 };
 
-// ── App ──────────────────────────────────────────────────────────
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
