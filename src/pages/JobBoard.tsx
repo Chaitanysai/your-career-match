@@ -18,6 +18,7 @@ import { searchJobs, normaliseJSearchJob } from "@/services/jsearch";
 import { matchJobs } from "@/services/gemini";
 import { buildPortalSearchUrl, ALL_PORTALS } from "@/lib/portals";
 import JobCard, { UnifiedJob } from "@/components/jobs/JobCard";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const JOB_TYPES = ["Full-time", "Part-time", "Contract", "Internship"];
 const EXPERIENCE_LEVELS = [
@@ -260,6 +261,7 @@ const JobBoard = () => {
     });
 
   return (
+    <DashboardLayout title="Job Board">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Header */}
@@ -473,6 +475,7 @@ const JobBoard = () => {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   );
 };
 
